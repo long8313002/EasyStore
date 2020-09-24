@@ -3,19 +3,24 @@ package com.zhangzheng.easystore.library
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
-fun Storable.commit(build: IStoreBuilder = SharedPreferencesStore.BUILDER) {
-    build.build(this).commit(this.generateMap())
+private fun Storable.commit() {
+    getStoreBuilder().build(this,EasyStore.getContext()).commit(this.generateMap())
 }
 
-fun Storable.apply(build: IStoreBuilder = SharedPreferencesStore.BUILDER) {
-    build.build(this).apply(this.generateMap())
+private fun Storable.apply() {
+    getStoreBuilder().build(this,EasyStore.getContext()).apply(this.generateMap())
 }
 
-
-fun <T : Storable> T.fill(build: IStoreBuilder = SharedPreferencesStore.BUILDER): T {
-    val values = build.build(this).getAll()
+private fun <T : Storable> T.fill(): T {
+    val values = getStoreBuilder().build(this,EasyStore.getContext()).getAll()
     fillMap(values)
     return this
+}
+
+private val spStoreBuilder = SharedPreferencesStore.Builder()
+
+private fun  <T : Storable> T.getStoreBuilder():IStoreBuilder{
+    return spStoreBuilder
 }
 
 
@@ -25,10 +30,21 @@ fun <T : Storable> KClass<T>.load(): T {
     return storable
 }
 
+fun <T : Storable> KClass<T>.apply(init: T.() -> Unit) {
+    val storable = proxyStorable(java)
+    storable.init()
+    storable.apply()
+}
+
 fun <T : Storable> KClass<T>.commit(init: T.() -> Unit) {
     val storable = proxyStorable(java)
     storable.init()
     storable.commit()
+}
+
+fun <T : Storable,M:Any> KClass<T>.get(get: T.() -> M):M{
+    val storable = load()
+    return storable.get()
 }
 
 private fun <T : Storable> proxyStorable(clazz: Class<T>): T {

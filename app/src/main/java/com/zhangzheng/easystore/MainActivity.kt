@@ -18,9 +18,10 @@ class MainActivity : AppCompatActivity() {
 
         Log.e("ZZZZZZ_get", loadFromLocal.name + "")
 
+        Log.e("ZZZZZZ_get", TestStorage::class.get { name } + "")
 
-        TestStorage::class.commit {
-            name = "22222"
+        TestStorage::class.apply {
+            name = "2777777"
         }
 
 

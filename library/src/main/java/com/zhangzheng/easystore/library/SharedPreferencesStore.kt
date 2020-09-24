@@ -4,15 +4,15 @@ import android.content.Context
 import android.content.SharedPreferences
 
 
-class SharedPreferencesStore(var name: String) : IStore {
 
-   private val sp = EasyStore.getContext().getSharedPreferences(name,Context.MODE_PRIVATE)
+class SharedPreferencesStore(var name: String,var context: Context) : IStore {
 
-    companion object {
-        val BUILDER: IStoreBuilder = object : IStoreBuilder {
-            override fun build(storable: Storable) = SharedPreferencesStore(storable.javaClass.name)
-        }
+    class Builder:IStoreBuilder{
+        override fun build(storable: Storable, context: Context)
+                =SharedPreferencesStore(storable.javaClass.name,context)
     }
+
+   private val sp = context.getSharedPreferences(name,Context.MODE_PRIVATE)
 
 
     override fun commit(values: Map<String, Any?>) = editContent(values).commit()
@@ -53,9 +53,6 @@ class SharedPreferencesStore(var name: String) : IStore {
                 }
                 is Set<*> -> {
                     edit.putStringSet(it.key, it.value as Set<String>)
-                }
-                is Storable -> {
-                    (it.value as Storable).commit(BUILDER)
                 }
             }
         }
