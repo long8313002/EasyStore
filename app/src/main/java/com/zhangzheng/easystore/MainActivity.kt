@@ -3,9 +3,7 @@ package com.zhangzheng.easystore
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import com.zhangzheng.easystore.library.EasyStore
-import com.zhangzheng.easystore.library.apply
-import com.zhangzheng.easystore.library.fill
+import com.zhangzheng.easystore.library.*
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,13 +13,17 @@ class MainActivity : AppCompatActivity() {
 
         EasyStore.init(this)
 
-        val bean = TestStorage().fill()
 
-        Log.e("ZZZZZ",bean.name+"<<<<<<")
+        val loadFromLocal = TestStorage::class.load()
 
-        bean.name = "9999999"
+        Log.e("ZZZZZZ_get", loadFromLocal.name + "")
 
-        bean.apply()
+
+        TestStorage::class.commit {
+            name = "22222"
+        }
+
+
     }
 
 }
