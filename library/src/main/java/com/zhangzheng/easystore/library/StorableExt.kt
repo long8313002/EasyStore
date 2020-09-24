@@ -1,5 +1,6 @@
 package com.zhangzheng.easystore.library
 
+import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
@@ -59,13 +60,20 @@ private fun <T : Storable> proxyStorable(clazz: Class<T>): T {
     val mapValue = mutableMapOf<String, Any>()
 
     return Proxy.newProxyInstance(clazz.classLoader, arrayOf(clazz)) { proxy, method, args ->
-        val methodName = method.name
+        var methodName = method.name
+        if(methodName.startsWith("is")){
+            methodName = methodName.replaceFirst("is","get")
+        }
         when {
             methodName.startsWith("set") -> {
                 mapValue[methodName.substring(3)] = args[0]
             }
             methodName.startsWith("get") -> {
-                return@newProxyInstance mapValue[methodName.substring(3)]
+                var value = mapValue[methodName.substring(3)]
+                if (value == null ) {
+                    value = getDefaultValue(method)
+                }
+                return@newProxyInstance value
             }
             methodName == "generateMap" -> {
                 return@newProxyInstance mapValue
@@ -78,4 +86,19 @@ private fun <T : Storable> proxyStorable(clazz: Class<T>): T {
             else -> null
         }
     } as T
+}
+
+
+private fun getDefaultValue(method: Method) = when {
+    isReturnNumberType(method) -> { 0 }
+    method.returnType == Boolean::class.java -> { false }
+    method.returnType == String::class.java -> { "" }
+    else -> { null }
+}
+
+private fun isReturnNumberType(method: Method): Boolean {
+    return method.returnType == Int::class.java
+            || method.returnType == Float::class.java
+            || method.returnType == Long::class.java
+            || method.returnType == Double::class.java
 }
