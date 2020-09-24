@@ -3,46 +3,54 @@ package com.zhangzheng.easystore.library
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
-private fun Storable.commit() {
-    getStoreBuilder().build(this,EasyStore.getContext()).commit(this.generateMap())
+private fun Storable.commit(storage: IStore) {
+    storage.commit(this.generateMap())
 }
 
-private fun Storable.apply() {
-    getStoreBuilder().build(this,EasyStore.getContext()).apply(this.generateMap())
+private fun Storable.apply(storage: IStore) {
+    storage.apply(this.generateMap())
 }
 
-private fun <T : Storable> T.fill(): T {
-    val values = getStoreBuilder().build(this,EasyStore.getContext()).getAll()
+private fun <T : Storable> T.fill(storage: IStore): T {
+    val values = storage.getAll()
     fillMap(values)
     return this
 }
 
 private val spStoreBuilder = SharedPreferencesStore.Builder()
 
-private fun  <T : Storable> T.getStoreBuilder():IStoreBuilder{
-    return spStoreBuilder
+private fun <T : Storable> KClass<T>.getStoreBuilder(): IStoreBuilder {
+    val builder = java.getAnnotation(Store::class.java)?.value
+    return if (builder == null) {
+        spStoreBuilder
+    } else {
+        builder.java.newInstance()
+    }
 }
+
+private fun <T : Storable> KClass<T>.getStorage() =
+    getStoreBuilder().build(this, EasyStore.getContext())
 
 
 fun <T : Storable> KClass<T>.load(): T {
     val storable = proxyStorable(java)
-    storable.fill()
+    storable.fill(getStorage())
     return storable
 }
 
 fun <T : Storable> KClass<T>.apply(init: T.() -> Unit) {
     val storable = proxyStorable(java)
     storable.init()
-    storable.apply()
+    storable.apply(getStorage())
 }
 
 fun <T : Storable> KClass<T>.commit(init: T.() -> Unit) {
     val storable = proxyStorable(java)
     storable.init()
-    storable.commit()
+    storable.commit(getStorage())
 }
 
-fun <T : Storable,M:Any> KClass<T>.get(get: T.() -> M):M{
+fun <T : Storable, M : Any> KClass<T>.get(get: T.() -> M): M {
     val storable = load()
     return storable.get()
 }
@@ -63,7 +71,7 @@ private fun <T : Storable> proxyStorable(clazz: Class<T>): T {
                 return@newProxyInstance mapValue
             }
             methodName == "fillMap" -> {
-                (args[0] as Map<String,Any>).forEach {
+                (args[0] as Map<String, Any>).forEach {
                     mapValue[it.key] = it.value
                 }
             }

@@ -2,14 +2,14 @@ package com.zhangzheng.easystore.library
 
 import android.content.Context
 import android.content.SharedPreferences
+import kotlin.reflect.KClass
 
 
-
-class SharedPreferencesStore(var name: String,var context: Context) : IStore {
+internal class SharedPreferencesStore(var name: String,var context: Context) : IStore {
 
     class Builder:IStoreBuilder{
-        override fun build(storable: Storable, context: Context)
-                =SharedPreferencesStore(storable.javaClass.name,context)
+        override fun build(storable: KClass<out Storable>, context: Context)
+                =SharedPreferencesStore(storable.java.name,context)
     }
 
    private val sp = context.getSharedPreferences(name,Context.MODE_PRIVATE)
